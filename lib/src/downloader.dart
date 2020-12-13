@@ -24,6 +24,8 @@ typedef void DownloadCallback(String id, DownloadTaskStatus status, int progress
 class FlutterDownloader {
   static const _channel = const MethodChannel('vn.hunghd/downloader');
   static bool _initialized = false;
+    
+  static bool get initialized => _initialized;
 
   static Future<Null> initialize({bool debug = true}) async {
     assert(!_initialized, 'FlutterDownloader.initialize() must be called only once!');
