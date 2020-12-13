@@ -48,6 +48,8 @@ import java.util.regex.Pattern;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
+import android.util.Base64;
+
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.PluginRegistry;
@@ -82,6 +84,7 @@ public class DownloadWorker extends Worker implements MethodChannel.MethodCallHa
     private MethodChannel backgroundChannel;
     private TaskDbHelper dbHelper;
     private TaskDao taskDao;
+    private NotificationCompat.Builder builder;
     private boolean showNotification;
     private boolean clickToOpenDownloadedFile;
     private boolean debug;
@@ -196,7 +199,8 @@ public class DownloadWorker extends Worker implements MethodChannel.MethodCallHa
             taskDao = null;
             return Result.success();
         } catch (Exception e) {
-            updateNotification(context, filename == null ? url : filename, DownloadStatus.FAILED, -1, null, true);
+            log( "doWork() " + e.getMessage());
+            updateNotification(context, filename == null ? url : filename, DownloadStatus.FAILED, -1, null);
             taskDao.updateTask(getId().toString(), DownloadStatus.FAILED, lastProgress);
             e.printStackTrace();
             dbHelper = null;
@@ -261,11 +265,16 @@ public class DownloadWorker extends Worker implements MethodChannel.MethodCallHa
                     throw new IOException("Stuck in redirect loop");
 
                 resourceUrl = new URL(url);
-                log("Open connection to " + url);
+                log("Open connection url: " + url);
                 httpConn = (HttpURLConnection) resourceUrl.openConnection();
 
-                httpConn.setConnectTimeout(15000);
-                httpConn.setReadTimeout(15000);
+                if (resourceUrl.getUserInfo() != null) {
+                    String basicAuth = "Basic " + Base64.encodeToString(resourceUrl.getUserInfo().getBytes(), Base64.DEFAULT);
+                    httpConn.setRequestProperty("Authorization", basicAuth);
+                }
+
+                httpConn.setConnectTimeout(45000);
+                httpConn.setReadTimeout(45000);
                 httpConn.setInstanceFollowRedirects(false);   // Make the logic below easier to detect redirections
                 httpConn.setRequestProperty("User-Agent", "Mozilla/5.0...");
 
@@ -383,6 +392,7 @@ public class DownloadWorker extends Worker implements MethodChannel.MethodCallHa
                 log(isStopped() ? "Download canceled" : "Server replied HTTP code: " + responseCode);
             }
         } catch (IOException e) {
+            Log.d(TAG, "downloadFile() " + e.getMessage());
             updateNotification(context, filename == null ? fileURL : filename, DownloadStatus.FAILED, -1, null, true);
             taskDao.updateTask(getId().toString(), DownloadStatus.FAILED, lastProgress);
             e.printStackTrace();
