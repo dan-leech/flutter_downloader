@@ -60,6 +60,7 @@ import io.flutter.view.FlutterNativeView;
 import io.flutter.view.FlutterRunArguments;
 
 public class DownloadWorker extends Worker implements MethodChannel.MethodCallHandler {
+    public static final String ARG_TITLE = "title";
     public static final String ARG_URL = "url";
     public static final String ARG_FILE_NAME = "file_name";
     public static final String ARG_SAVED_DIR = "saved_file";
@@ -189,7 +190,12 @@ public class DownloadWorker extends Worker implements MethodChannel.MethodCallHa
 
         setupNotification(context);
 
-        updateNotification(context, filename == null ? url : filename, DownloadStatus.RUNNING, task.progress, null, false);
+        // Default to the filename or URL if a title has not been specified.
+        if (title == null || title.isEmpty()) {
+            title = filename == null ? url : filename;
+        }
+
+        updateNotification(context, title, DownloadStatus.RUNNING, task.progress, null, false);
         taskDao.updateTask(getId().toString(), DownloadStatus.RUNNING, task.progress);
 
         try {
@@ -200,7 +206,7 @@ public class DownloadWorker extends Worker implements MethodChannel.MethodCallHa
             return Result.success();
         } catch (Exception e) {
             log( "doWork() " + e.getMessage());
-            updateNotification(context, filename == null ? url : filename, DownloadStatus.FAILED, -1, null);
+            updateNotification(context, title, DownloadStatus.FAILED, -1, null);
             taskDao.updateTask(getId().toString(), DownloadStatus.FAILED, lastProgress);
             e.printStackTrace();
             dbHelper = null;
@@ -350,7 +356,7 @@ public class DownloadWorker extends Worker implements MethodChannel.MethodCallHa
                     if ((lastProgress == 0 || progress > lastProgress + STEP_UPDATE || progress == 100)
                             && progress != lastProgress) {
                         lastProgress = progress;
-                        updateNotification(context, filename, DownloadStatus.RUNNING, progress, null, false);
+                        updateNotification(context, title, DownloadStatus.RUNNING, progress, null, false);
 
                         // This line possibly causes system overloaded because of accessing to DB too many ?!!!
                         // but commenting this line causes tasks loaded from DB missing current downloading progress,
@@ -380,20 +386,20 @@ public class DownloadWorker extends Worker implements MethodChannel.MethodCallHa
                         }
                     }
                 }
-                updateNotification(context, filename, status, progress, pendingIntent, true);
+                updateNotification(context, title, status, progress, pendingIntent, true);
                 taskDao.updateTask(getId().toString(), status, progress);
 
                 log(isStopped() ? "Download canceled" : "File downloaded");
             } else {
                 DownloadTask task = taskDao.loadTask(getId().toString());
                 int status = isStopped() ? (task.resumable ? DownloadStatus.PAUSED : DownloadStatus.CANCELED) : DownloadStatus.FAILED;
-                updateNotification(context, filename == null ? fileURL : filename, status, -1, null, true);
+                updateNotification(context, title, status, -1, null, true);
                 taskDao.updateTask(getId().toString(), status, lastProgress);
                 log(isStopped() ? "Download canceled" : "Server replied HTTP code: " + responseCode);
             }
         } catch (IOException e) {
             Log.d(TAG, "downloadFile() " + e.getMessage());
-            updateNotification(context, filename == null ? fileURL : filename, DownloadStatus.FAILED, -1, null, true);
+            updateNotification(context, title, DownloadStatus.FAILED, -1, null, true);
             taskDao.updateTask(getId().toString(), DownloadStatus.FAILED, lastProgress);
             e.printStackTrace();
         } finally {

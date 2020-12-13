@@ -275,6 +275,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _requestDownload(_TaskInfo task) async {
     task.taskId = await FlutterDownloader.enqueue(
+        title: task.name,
         url: task.link,
         headers: {"auth": "test_for_sql_encoding"},
         savedDir: _localPath,
