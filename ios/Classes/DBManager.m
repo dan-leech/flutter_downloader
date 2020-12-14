@@ -6,6 +6,7 @@
 //
 
 #import "DBManager.h"
+#import "DBManager.h"
 #import <sqlite3.h>
 
 @interface DBManager()
@@ -16,7 +17,7 @@
 @property (nonatomic, strong) NSMutableArray *arrResults;
 
 -(void)copyDatabaseIntoDocumentsDirectory;
--(void)runQuery:(const char *)query isQueryExecutable:(BOOL)queryExecutable;
+-(DBResult *)runQuery:(const char *)query isQueryExecutable:(BOOL)queryExecutable;
 
 @end
 
@@ -63,7 +64,7 @@
     }
 }
 
--(void)runQuery:(const char *)query isQueryExecutable:(BOOL)queryExecutable{
+-(DBResult *)runQuery:(const char *)query isQueryExecutable:(BOOL)queryExecutable{
     if (debug) {
         NSLog(@"execute query: %s", query);
     }
@@ -74,20 +75,8 @@
     // Set the database file path.
     NSString *databasePath = [self.documentsDirectory stringByAppendingPathComponent:self.databaseFilename];
     
-    // Initialize the results array.
-    if (self.arrResults != nil) {
-        [self.arrResults removeAllObjects];
-        self.arrResults = nil;
-    }
-    self.arrResults = [[NSMutableArray alloc] init];
-    
-    // Initialize the column names array.
-    if (self.arrColumnNames != nil) {
-        [self.arrColumnNames removeAllObjects];
-        self.arrColumnNames = nil;
-    }
-    self.arrColumnNames = [[NSMutableArray alloc] init];
-    
+    // Initialize the results object.
+    DBResult *result = [[DBResult alloc] init];
     
     // Open the database.
     BOOL openDatabaseResult = sqlite3_open([databasePath UTF8String], &sqlite3Database);
@@ -129,15 +118,15 @@
                         }
                         
                         // Keep the current column name.
-                        if (self.arrColumnNames.count != totalColumns) {
+                        if (result.arrColumnNames.count != totalColumns) {
                             dbDataAsChars = (char *)sqlite3_column_name(compiledStatement, i);
-                            [self.arrColumnNames addObject:[NSString stringWithUTF8String:dbDataAsChars]];
+                            [result.arrColumnNames addObject:[NSString stringWithUTF8String:dbDataAsChars]];
                         }
                     }
                     
                     // Store each fetched data row in the results array, but first check if there is actually data.
                     if (arrDataRow.count > 0) {
-                        [self.arrResults addObject:arrDataRow];
+                        [result.arrResults addObject:arrDataRow];
                     }
                 }
             }
@@ -148,10 +137,10 @@
                 int executeQueryResults = sqlite3_step(compiledStatement);
                 if (executeQueryResults == SQLITE_DONE) {
                     // Keep the affected rows.
-                    self.affectedRows = sqlite3_changes(sqlite3Database);
+                    result.affectedRows = sqlite3_changes(sqlite3Database);
                     
                     // Keep the last inserted row ID.
-                    self.lastInsertedRowID = sqlite3_last_insert_rowid(sqlite3Database);
+                    result.lastInsertedRowID = sqlite3_last_insert_rowid(sqlite3Database);
                 }
                 else {
                     // If could not execute the query show the error message on the debugger.
@@ -174,20 +163,19 @@
     
     // Close the database.
     sqlite3_close(sqlite3Database);
+    
+    return result;
 }
 
--(NSArray *)loadDataFromDB:(NSString *)query{
+-(DBResult *)loadDataFromDB:(NSString *)query{
     // Run the query and indicate that is not executable.
     // The query string is converted to a char* object.
-    [self runQuery:[query UTF8String] isQueryExecutable:NO];
-    
-    // Returned the loaded results.
-    return (NSArray *)self.arrResults;
+    return [self runQuery:[query UTF8String] isQueryExecutable:NO];
 }
 
--(void)executeQuery:(NSString *)query{
+-(DBResult *)executeQuery:(NSString *)query{
     // Run the query and indicate that is executable.
-    [self runQuery:[query UTF8String] isQueryExecutable:YES];
+    return [self runQuery:[query UTF8String] isQueryExecutable:YES];
 }
 
 @end

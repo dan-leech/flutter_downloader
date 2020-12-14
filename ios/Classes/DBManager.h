@@ -5,22 +5,17 @@
 //  Author: GABRIEL THEODOROPOULOS.
 //
 
+#import "DBResult.h"
 #import <Foundation/Foundation.h>
 
 @interface DBManager : NSObject
-
-@property (nonatomic, strong) NSMutableArray *arrColumnNames;
-
-@property (nonatomic) int affectedRows;
-
-@property (nonatomic) long long lastInsertedRowID;
 
 @property (nonatomic) BOOL debug;
 
 -(instancetype)initWithDatabaseFilePath:(NSString *)dbFilePath;
 
--(NSArray *)loadDataFromDB:(NSString *)query;
+-(DBResult *)loadDataFromDB:(NSString *)query;
 
--(void)executeQuery:(NSString *)query;
+-(DBResult *)executeQuery:(NSString *)query;
 
 @end
