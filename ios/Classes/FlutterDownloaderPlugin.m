@@ -945,6 +945,20 @@ static BOOL debug = YES;
             });
         }
     }
+    
+    if([_runningTaskById count] == 0) {
+        if (debug) {
+            NSLog(@"all download tasks have been finished");
+        }
+        
+        // todo: two notifications with URLSessionDidFinishEventsForBackgroundURLSession or not?
+        [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+            // Show a local notification when all downloads are over.
+            UILocalNotification *localNotification = [[UILocalNotification alloc] init];
+            localNotification.alertBody = self->_allFilesDownloadedMsg;
+            [[UIApplication sharedApplication] presentLocalNotificationNow:localNotification];
+        }];
+    }
 }
 
 -(void)URLSessionDidFinishEventsForBackgroundURLSession:(NSURLSession *)session
@@ -956,7 +970,7 @@ static BOOL debug = YES;
     [[self currentSession] getTasksWithCompletionHandler:^(NSArray *dataTasks, NSArray *uploadTasks, NSArray *downloadTasks) {
         if ([downloadTasks count] == 0) {
             if (debug) {
-                NSLog(@"all download tasks have been finished");
+                NSLog(@"all download tasks have been finished on background");
             }
 
             if (self.backgroundTransferCompletionHandler != nil) {
