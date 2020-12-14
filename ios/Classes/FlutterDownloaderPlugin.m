@@ -762,7 +762,7 @@ static BOOL debug = YES;
             }];
         }
         [self deleteTask:taskId];
-        if (shouldDeleteContent) {
+        if (shouldDeleteContent && ![taskDict[KEY_FILE_NAME] isEqual:[NSNull null]]) {
             NSURL *destinationURL = [self fileUrlFromDict:taskDict];
 
             NSError *error;
