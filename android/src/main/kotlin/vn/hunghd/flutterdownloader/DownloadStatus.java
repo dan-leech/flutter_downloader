@@ -8,4 +8,5 @@ public class DownloadStatus {
     public static int FAILED = 4;
     public static int CANCELED = 5;
     public static int PAUSED = 6;
+    public static int ALL_COMPLETED = 9999;
 }

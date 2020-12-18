@@ -23,6 +23,7 @@ class DownloadTaskStatus {
   static const failed = const DownloadTaskStatus(4);
   static const canceled = const DownloadTaskStatus(5);
   static const paused = const DownloadTaskStatus(6);
+  static const allCompleted = const DownloadTaskStatus(9999);
 }
 
 ///
