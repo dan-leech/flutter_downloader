@@ -574,6 +574,14 @@ static BOOL debug = YES;
     NSString *headers = call.arguments[KEY_HEADERS];
     NSNumber *showNotification = call.arguments[KEY_SHOW_NOTIFICATION];
     NSNumber *openFileFromNotification = call.arguments[KEY_OPEN_FILE_FROM_NOTIFICATION];
+    
+    if(showNotification == nil) {
+        showNotification = @(NO);
+    }
+    
+    if(openFileFromNotification == nil) {
+        openFileFromNotification = @(NO);
+    }
 
     NSURLSessionDownloadTask *task = [self downloadTaskWithURL:[NSURL URLWithString:urlString] andHeaders:headers];
 
@@ -584,11 +592,11 @@ static BOOL debug = YES;
                                   fileName, KEY_FILE_NAME,
                                   savedDir, KEY_SAVED_DIR,
                                   headers, KEY_HEADERS,
-                                  showNotification, KEY_SHOW_NOTIFICATION,
-                                  openFileFromNotification, KEY_OPEN_FILE_FROM_NOTIFICATION,
                                   @(NO), KEY_RESUMABLE,
                                   @(STATUS_ENQUEUED), KEY_STATUS,
-                                  @(0), KEY_PROGRESS, nil]
+                                  @(0), KEY_PROGRESS,
+                                  showNotification, KEY_SHOW_NOTIFICATION,
+                                  openFileFromNotification, KEY_OPEN_FILE_FROM_NOTIFICATION, nil]
                          forKey:taskId];
 
     __typeof__(self) __weak weakSelf = self;
@@ -745,6 +753,7 @@ static BOOL debug = YES;
     NSString *taskId = call.arguments[KEY_TASK_ID];
     Boolean shouldDeleteContent = [call.arguments[@"should_delete_content"] boolValue];
     NSDictionary* taskDict = [self loadTaskWithId:taskId];
+    NSLog(@"try to remove task[%@]", taskId);
     if (taskDict != nil) {
         NSNumber* status = taskDict[KEY_STATUS];
         if ([status intValue] == STATUS_ENQUEUED || [status intValue] == STATUS_RUNNING) {
@@ -759,6 +768,8 @@ static BOOL debug = YES;
                         dispatch_sync([weakSelf databaseQueue], ^{
                             [weakSelf deleteTask:taskId];
                         });
+                        
+                        NSLog(@"task[%@] canceled", taskId);
                         return;
                     }
                 };
