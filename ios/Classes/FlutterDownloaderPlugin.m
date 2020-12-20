@@ -143,7 +143,7 @@ static BOOL debug = YES;
     return _session;
 }
 
-- (NSURLSessionDownloadTask*)downloadTaskWithURL: (NSURL*) url fileName: (NSString*) fileName andSavedDir: (NSString*) savedDir andHeaders: (NSString*) headers
+- (NSURLSessionDownloadTask*)downloadTaskWithURL: (NSURL*) url andHeaders: (NSString*) headers
 {
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:url];
     if (headers != nil && [headers length] > 0) {
@@ -317,6 +317,9 @@ static BOOL debug = YES;
         } else {
             filename = downloadTask.currentRequest.URL.lastPathComponent;
         }
+
+        // make name unique
+        filename = [NSString stringWithFormat:@"%@_%@", taskId, filename];
 
         NSMutableDictionary *mutableTask = [taskInfo mutableCopy];
         [mutableTask setObject:filename forKey:KEY_FILE_NAME];
@@ -572,7 +575,7 @@ static BOOL debug = YES;
     NSNumber *showNotification = call.arguments[KEY_SHOW_NOTIFICATION];
     NSNumber *openFileFromNotification = call.arguments[KEY_OPEN_FILE_FROM_NOTIFICATION];
 
-    NSURLSessionDownloadTask *task = [self downloadTaskWithURL:[NSURL URLWithString:urlString] fileName:fileName andSavedDir:savedDir andHeaders:headers];
+    NSURLSessionDownloadTask *task = [self downloadTaskWithURL:[NSURL URLWithString:urlString] andHeaders:headers];
 
     NSString *taskId = [self identifierForTask:task];
 
@@ -691,7 +694,7 @@ static BOOL debug = YES;
             NSString *fileName = taskDict[KEY_FILE_NAME];
             NSString *headers = taskDict[KEY_HEADERS];
 
-            NSURLSessionDownloadTask *newTask = [self downloadTaskWithURL:[NSURL URLWithString:urlString] fileName:fileName andSavedDir:savedDir andHeaders:headers];
+            NSURLSessionDownloadTask *newTask = [self downloadTaskWithURL:[NSURL URLWithString:urlString] andHeaders:headers];
             NSString *newTaskId = [self identifierForTask:newTask];
 
             // update memory-cache
