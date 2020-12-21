@@ -698,8 +698,6 @@ static BOOL debug = YES;
         NSNumber* status = taskDict[KEY_STATUS];
         if ([status intValue] == STATUS_FAILED || [status intValue] == STATUS_CANCELED) {
             NSString *urlString = taskDict[KEY_URL];
-            NSString *savedDir = taskDict[KEY_SAVED_DIR];
-            NSString *fileName = taskDict[KEY_FILE_NAME];
             NSString *headers = taskDict[KEY_HEADERS];
 
             NSURLSessionDownloadTask *newTask = [self downloadTaskWithURL:[NSURL URLWithString:urlString] andHeaders:headers];
